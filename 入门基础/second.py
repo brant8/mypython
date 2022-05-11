@@ -36,3 +36,13 @@ print("helloworld".index('wo'))
 print("helloworld".split('wo'))
 
 print('...'.join(['a','b','c']))
+
+
+name_list=['Tom','Lily','Rose']
+name_list.extend('Jack')
+print(name_list)
+name_list2=['Tom','Lily','Rose']
+name_list2.extend(['zs','ls'])
+print(name_list2)
+
+name_list2=['Tom','Lily','Rose']
