@@ -451,19 +451,17 @@
 20. 运算符
 
     1. 序列，指的是一种包含多项数据的数据结构，序列包含的多个数据项（也叫成员）按顺序排列，可通过索引来访问成员。 Python 的常见序列类型包括字符串、列表和元组
-
-    ```markdown
+    
     | 运算符  | 描述  | 支持的容器类型  |  
     |---|---|---|
     |  + |  合并 |  字符串、列表、元组 |  
     |  * |  复制 |   |  字符串、列表、元组  | 
     | in  |  元素是否存在 |   字符串、列表、元组、字典 |  
-    |  not in |  元素是否不存在 |  字符串、列表、元组、字典 |  
-    ```
+    |  not in |  元素是否不存在 |  字符串、列表、元组、字典 |
 
 21. 公共方法
 
-```markdown
+
 |  函数 | 描述  |  
 |---|---|
 | len()  | 计算容器中元素个数  |  
@@ -472,7 +470,7 @@
 |  min() | 返回容器中元素最小值  | 
 |  range(start,end,step) |  生成start到end的数组（不包含end），步长为step（可省略，默认值1）的可迭代对象，共for循环使用 | 
 | enumerate()  | 函数用于将一个可遍历的数据对象（如列表、元组或字符串）组合为一个索引序列，同时列出数据和数据下标，一般用在for循环当中  | 
-```
+
 
 1. `enumerate(可便利对象, start = 0)`，start参数用来设置遍历数据的下标起始值，默认为0.
 
@@ -874,20 +872,275 @@
           f.close()
           ```
 
-          ```markdown
-          | 模式  | 描述  |   
+          | 模式  | 描述  |
           |---|---|
-          | r  | 以只读方式打开文件。文件的指针将会放在文件的开头，这是默认模式，如果文件不存在，报错。  | 
-          | rb  |  以二进制格式打开一个文件用于只读。文件指针将会放在文件的开头。这是默认模式 | 
-          | r+  |  打开一个文件用于读写。文件指针将会放在文件的开头。 | 
-          | rb+  |  以二进制格式打开一个文件用于读写。文件指针将会放在文件的开头。 | 
-          | w  | 打开一个文件只用于吸入。如果文件已存在则打开文件，并从开头开始编辑，即原有内容会被删除。如果该文件不存在，创建新文件。  | 
-          | wb  | 以二进制格式打开一个文件只用于写入。如果该文件已存在则打开文件，并从头开始编辑，即原有内容会被删除。如果该文件不存在，则创建新文件。  | 
-          | w+  |  打开一个文件用于读写。如果该文件已存在则打开文件，并从头开始编辑，即原有内容会被删除。如果该文件不存在，创建新文件。 | 
-          | wb+  |  以二进制格式打开一个文件用于读写。如果该文件已存在则打开文件，并从开头开始编辑，即原有内容会被删除。如果该文件不存在，创建新文件。 | 
-          | a  |  打开一个文件用于追加。如果该文件已存在，文件指针将会放在文件的结尾。也就是说，新的内容会被写入到已有内容之后，如果该文件不存在，创建新文件进行写入。 | 
-          |   |   | 
+          | r  | 以**只读方式打开**文件。文件的指针将会放在文件的开头，这是默认模式，如果文件不存在，报错。 |
+          | rb  |  以二进制格式打开一个文件用于只读。文件指针将会放在文件的开头。这是默认模式 |
+          | r+  |  打开一个文件用于读写。文件指针将会放在文件的开头。 |
+          | rb+  |  以二进制格式打开一个文件用于读写。文件指针将会放在文件的开头。 |
+          | w  | 打开一个文件只用于**写入**。如果文件已存在则打开文件，并从开头开始编辑，即原有内容会被删除。如果该文件不存在，创建新文件。 |
+          | wb  | 以二进制格式打开一个文件只用于写入。如果该文件已存在则打开文件，并从头开始编辑，即原有内容会被删除。如果该文件不存在，则创建新文件。  |
+          | w+  |  打开一个文件用于读写。如果该文件已存在则打开文件，并从头开始编辑，即原有内容会被删除。如果该文件不存在，创建新文件。 |
+          | wb+  |  以二进制格式打开一个文件用于读写。如果该文件已存在则打开文件，并从开头开始编辑，即原有内容会被删除。如果该文件不存在，创建新文件。 |
+          | a  | 打开一个文件用于**追加**。如果该文件已存在，文件指针将会放在文件的结尾。也就是说，新的内容会被写入到已有内容之后，如果该文件不存在，创建新文件进行写入。 |
+          | ab | 以二进制格式打开一个文件用于追加。如果文件已存在，文件指针将会放在文件的结尾。也就是说，新的内容会被写入到已有内容之后。如果文件不存在，创建新文件进行写入。 |
+          | a+ | 打开一个文件用于读写。如果该文件已存在，文件指针将会放在文件的结尾。文件打开时回事追加模式。如果文件不存在，创建新文件用于读写。文件指针后面没有数据，所以无法读取。 |
+          | ab+ | 以二进制格式打开一个文件用于追加。如果该文件已存在，文件指针将会放在文件的结尾。如果该文件不存在，创建新文件用于读写。 |
+          
+       3. 访问模式可以省略，默认模式为`r`.
+
+       4. 注意w+、a+、r+指针，等读取数据有影响。
+
+    2. `read()`：如`文件对象.read(num)`表示从文件中读取的数据长度（单位是字节），如果没有传入num，则表示读取文件中所有的数据。注意：换行符`\n`页占2个字节数。
+
+    3. `readlines()`：按照行的方式把整个文件中的内容进行一次性读取，并且返回的是一个列表，其中每一行的数据为一个元素。
+
+       ```python
+       f2 = open('../pics/test.txt')
+       content = f2.readlines()
+       print(content) #['aaa\n', 'bbb\n', 'ccc\n', 'ddd']
+       ```
+
+    4. `readline()`：一次读取一行内容。第一次调用读取第一行，第二次读取调用第二行。
+
+    5. `write()`：写文件
+
+    6. `seek()`：用来移动文件指针
+
+       1. `文件对象.seek(偏移量，起始位置)`：0代表文件开头、1代表当前位置、2代表文件结尾。
+
+       2. ```python
+          f3 = open('../pics/test.txt','r+')
+          # 1.改变读取数据开始位置,向后偏移2个单位
+          f3.seek(2,0)
+          # 2.把文件指针放结尾（无法读取数据）
+          f3.seek(0,2)
+          con = f3.read()
+          print(con)
+          f3.close()
           ```
+
+    7. 文件备份案例
+
+       1. ```python
+          # 1.获取要复制的文件
+          old_name = input("输入要备份的名字： ")
+          print(old_name)
+          print(type(old_name))
+          # 2.提取后缀 test.txt 找到名字中的点，名字和后缀分离
+          index = old_name.rfind('.')
+          print(index)
+          # 3.切片分离
+          print(old_name[0:index])
+          print(old_name[index:])
+          new_name = old_name[0:index] + '[备份]' + old_name[index:]
+          # 4.通过二进制打开文件和二进制写入
+          old_f = open(old_name,'rb')
+          new_f = open(new_name,'wb')
+          # 5.若并不确定文件大小，循环写入
+          while True:
+              con = old_f.read(1024)
+              if len(con)==0:
+                  break
+              new_f.write(con)
+          # 6.关闭文件
+          old_f.close()
+          new_f.close()
+          ```
+
+    8. 在Python中文件和文件夹的操作要借助`os模块`里面的功能
+
+       1. 导入os模块：`import os`
+       2. `os.rename(旧名，新名)`重命名，适用于文件和文件夹
+       3. `os.remove(文件名)`删除
+       4. 获取当前目录`os.getcwd()`
+       5. 创建文件夹`os.mkdir(名)`
+       6. 删除文件夹`os.rmdir(名)`
+       7. 改变默认目录`os.chddir`
+       8. 获取某个文件夹下所有文件，返回一个**列表**`listdir()`，默认当前文件夹
+
+33. 面向对象
+
+    1. 类名语法：遵循大驼峰命名习惯
+
+    2. ```python
+       class 类名():
+           代码..
+       对象名 = 类名()    
+       # 比如
+       class Washer():
+           def wash(self):
+               print("wash machine")
+               print(self) # 2.2 <__main__.Washer object at 0x0000023111887E80>
+       haier = Washer()   #1.海尔对象传入Washer里的wash的self     
+       print(haier) # 2.1 <__main__.Washer object at 0x0000023111887E80>
+       ```
+
+    3. `self`：指的是调用该函数的对象
+
+    4. 属性：既可以在类外添加和获取，也可以在类里面添加和获取
+
+       1. 类外设置属性：`对象名.属性名 = 值`
+       2. 类里设置属性：`self.属性名`
+
+    5. 魔法方法：`__xx__()`格式的函数叫做魔法方法，指的是具有特殊功能的函数。
+
+    6. `__init__()`：初始化对象
+
+       ```python
+       class Washer():
+           #定义__init__，添加实例属性
+           def __init__(self): # __init__()创建一个对象时默认被调用，不需要手动调用    
+               self.width=500
+               self.height = 800
+           def print_info(self):
+               print(f'洗衣机的宽度{self.width}，高度时{self.height}')
+           #带参数初始化值
+           def __init__(self,width,height):    
+               self.width = width
+               self.height = height
+       haier1 = Washer(20,30)        
+       ```
+
+    7. `__str__()`：默认打印内存地址，与java的`toString`类似。如果定义了`__str__(self)`方法，就会打印从这个方法中`return`的数据。
+
+    8. `__del__()`：当删除对象时，python解释器也会默认调用`__del__()`方法。
+
+    9. 烤地瓜案例：
+
+       ```python
+       class Potato():
+           def __init__(self): #设置属性初始状态
+               self.cook_time = 0
+               self.cook_static = '生的'
+               self.condiments = []
+           def cook(self,time):
+               self.cook_time += time
+               if 0 <= self.cook_time <3:
+                   self.cook_static = '生的'
+               elif 3<=self.cook_time<5:
+                   self.cook_static='半生不熟'
+               elif 5<= self.cook_time < 8:
+                   self.cook_static = '输了'
+               elif 8 <= self.cook_time:
+                   self.cook_static = '焦了'
+           def add_condiments(self,condiment):
+               """添加调料"""
+               self.condiments.append(condiment)
+           def __str__(self):
+               return f'这个地瓜烤了{self.cook_time}秒，现在是{self.cook_static},添加有{self.condiments}种调料'
+       
+       digua = Potato()
+       digua.cook(2)
+       digua.add_condiments('盐')
+       print(digua)
+       digua.add_condiments('辣椒面')
+       digua.cook(2)
+       print(digua)
+       ```
+
+34. 继承两个版本
+
+    1. 经典类：不由任意内置类型派生出的类，称之为经典类
+
+       1. ```python
+          class 类名：
+          	代码...	
+          ```
+
+    2. 新式类：Python3.0解释器默认使用
+
+       1. ```python
+          class 类名(object)： # object为基类
+          	代码..
+          ```
+
+    3. 所有类默认继承object类，object类时顶级类或基类了其他子类叫做派生类。
+
+       1. ```python
+          #父类A
+          class A(object):
+              def __init__(self):
+                  self.num1 = 1
+              def info_print1(self):
+                  print(self.num1)
+          #父类
+          class B(object):
+              def __init__(self):
+                  self.num2 = 2
+              def info_print2(self):
+                  print(self.num2)
+                  
+          #子类B 默认继承父类所有属性和方法
+          class C(A,B):
+              pass
+          result = C()
+          result.info_print1()  
+          ```
+
+    4. 单继承：一个父类继承给子类
+
+    5. 多继承：一个类同时继承了多个父类。一个类多个父类的时候，默认使用第一个父类的同名属性和方法。
+
+    6. 子类重写父类同名方法和属性：若子类父类有相同方法和属性，则使用子类自身同名的属性和方法。
+
+    7. `__mro__()`：打印类的继承顺序。如`C.__mro__()`
+
+    8. 子类调用父类同名的属性和方法：
+
+       1. ```python
+          class Prentice(School, Master):
+          	def __ini__(self):
+                  self.kongfu = '[独创煎饼果子]'
+              def make_cake(self):
+                  #如果是先调用了父类的属性和方法，父类属性会覆盖子类属性，故在调用属性前，先调用自己子类的初始化
+                  self.__init__()	# 如果不加自己的初始化，kongfu属性值是上次调用init内的kongfu属性值
+                  print(f'运用{self.kongfu}制作煎饼果子')
+              # 调用父类同名方法，但是为保证调用到的也是父类的属性，必须在调用方法前调用父类的初始化    
+              def make_master_cake(self):
+                  Master.__init__(self) # 想要调用父类的同名方法和属性，属性在init初始化位置，所以要再次调用init
+                  Master.make_cake(self) # 把父类同名属性和方法再次封装
+              def make_school_cake(self):
+                  School.__init__(self)
+                  School.make_cake(self)
+          ...
+          ```
+
+    9. 多层继承
+
+    10. `super()`调用父类方法：使用`super()`可以自动查找父类
+
+        1. ```python
+           # 普通调用父类方法和属性
+           def make_old_cake(self): 
+               Master.__init__(self)
+               Master.make_cake(self)
+               School.__init__(self)
+               School.make_cake(self)
+           # 使用super方法    
+           # 1. 带参数super(当前类名,self).函数()  若父类页调用爷爷类，则父类爷爷类都会调用
+           super(Prentice,self).__init__()	
+           super(Prentice,self).make_cake()
+           # 2. 没有参数
+           super().__init__()
+           super().make_cake()
+           ```
+
+    11. 私有权限：为实例属性和方法设置私有权限，子类无法使用。定义私有语法，使用前缀`__XX`。
+
+    12. 获取和修改私有属性值：定义函数名`get_xx`获取私有属性，定义`set_xx·修改私有属性。
+
+        1. ```python
+           def get_money(self):
+               return self.__money
+           def set_money(self):
+               self.__money = 500
+           ```
+
+        2. 
+
+
+
 
 
 
