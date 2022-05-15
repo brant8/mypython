@@ -2,6 +2,7 @@ import Student
 class StudentManagerSystem():
     def __init__(self):
         self.student_list = []
+        self.load_student()
     def run(self): #一般入口函数命名为run
         while True:
             self.show_menu()
@@ -90,7 +91,7 @@ class StudentManagerSystem():
             data = f.read()
             # 文件种读取的数据都是字符串且字符串内部为字典数据，古需要转换数据类型，再转换字典为对象后存储到学员列表。
             new_list = eval(data)
-            self.student_list = [Student(i['name'],i['gender'],i['tel']) for i in new_list]
+            self.student_list = [Student.Students(i['name'],i['gender'],i['tel']) for i in new_list]
         finally:
             f.close()
 
