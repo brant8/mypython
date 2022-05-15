@@ -17,3 +17,11 @@ class C(A,B):
 result = C()
 result.info_print1()
 
+class Dog(object):
+    __tooth = 10		#__xx为私有属性
+    @classmethod		#定义类方法
+    def get_tooth(cls): #
+        return cls.__tooth
+
+wangcai = Dog()
+wangcai.get_tooth()

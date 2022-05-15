@@ -874,12 +874,12 @@
 
           | 模式  | 描述  |
           |---|---|
-          | r  | 以**只读方式打开**文件。文件的指针将会放在文件的开头，这是默认模式，如果文件不存在，报错。 |
+          | r  | 以**只读方式打开**文件（读取方式为字符串）。文件的指针将会放在文件的开头，这是默认模式，如果文件不存在，报错。读取到的内容可用`eval()`转换成字典 |
           | rb  |  以二进制格式打开一个文件用于只读。文件指针将会放在文件的开头。这是默认模式 |
           | r+  |  打开一个文件用于读写。文件指针将会放在文件的开头。 |
           | rb+  |  以二进制格式打开一个文件用于读写。文件指针将会放在文件的开头。 |
-          | w  | 打开一个文件只用于**写入**。如果文件已存在则打开文件，并从开头开始编辑，即原有内容会被删除。如果该文件不存在，创建新文件。 |
-          | wb  | 以二进制格式打开一个文件只用于写入。如果该文件已存在则打开文件，并从头开始编辑，即原有内容会被删除。如果该文件不存在，则创建新文件。  |
+          | w  | 打开一个文件只用于**写入**。如果文件已存在则打开文件，并从开头开始编辑，即原有内容会被删除。如果该文件不存在，创建新文件。写入的内容必须是**字符串**，必要时使用转换`str(序列)`。 |
+          | wb  | 以**二进制格式**打开一个文件只用于写入。如果该文件已存在则打开文件，并从头开始编辑，即原有内容会被删除。如果该文件不存在，则创建新文件。 |
           | w+  |  打开一个文件用于读写。如果该文件已存在则打开文件，并从头开始编辑，即原有内容会被删除。如果该文件不存在，创建新文件。 |
           | wb+  |  以二进制格式打开一个文件用于读写。如果该文件已存在则打开文件，并从开头开始编辑，即原有内容会被删除。如果该文件不存在，创建新文件。 |
           | a  | 打开一个文件用于**追加**。如果该文件已存在，文件指针将会放在文件的结尾。也就是说，新的内容会被写入到已有内容之后，如果该文件不存在，创建新文件进行写入。 |
@@ -1137,7 +1137,219 @@
                self.__money = 500
            ```
 
-        2. 
+35. 多态：传入不同的对象，产生不同的结果。
+
+    1. 定义：子类重写父类方法，调用不同子类对象的相同父类方法，可以产生不同的执行结果。
+
+    2. 实现步骤：
+
+       1. 定义父类，提供公共方法
+       2. 定义子类，并重写父类方法
+       3. 传递子类对象给调用者，可以看到不同子类执行效果
+
+       ```python
+       class Dog(object):
+           def work(self):
+               print('指哪打哪')
+       class ArmyDog(Dog):
+           def work(self):
+               print('追击敌人')
+       class DrugDog(Dog):
+           def work(self):
+               print('追查毒品')
+       class Person(object):
+           def work_with_dog(self,dog): #传入不同的对象，执行不同的代码，即不同的work函数
+               dog.work()
+       ad = ArmyDog()
+       dd = DrugDog()
+       ls = Person()
+       ls.work_with_dog(ad)
+       ls.work_with_dog(dd)
+       ```
+
+36. 类属性和实例属性
+
+    1. 类属性就是类对象所拥有的属性，它被该类的所有实例对象所共有
+    2. 类属性可以使用类对象或实例对象访问。
+
+37. 类方法和静态方法
+
+    1. 类方法需要用修饰器`@classmethod`来表示类方法：第一个参数必须是类对象，一般以`cls`作为第一个参数。
+
+    2. 类方法一般在需要使用类对象（如访问私有类属性等）是，定义。一般配合类属性使用。
+
+    3. ```python
+       class Dog(object):
+           __tooth = 10		#__xx为私有属性
+           @classmethod		#定义类方法
+           def get_tooth(cls): #    
+               return cls.__tooth
+       ```
+
+    4. 静态方法：通过装饰器`@staticmethod`来进行修饰，静态方法既不需要传递类对象也不需要传递实例对象（没有形参self/cls）。
+
+    5. 静态方法能通过实例对象和类对象取访问。
+
+    6. 当方法中既不需要使用实例对象（对象/属性），也不需要使用类对象（类属性、类方法、实例）时，定义静态方法。
+
+    7. 取消不需要的参数传递，有利于减少不必要的内存占用和性能消耗。
+
+    8. ```python
+       class Dog(object):
+           @staticmethod
+           def info_print():
+               print("gou class")
+       wangcai = Dog()
+       wangcai.info_print()
+       Dog.info_print()
+       ```
+
+38. 异常
+
+    ```python
+    try:
+        可能发生错误的代码
+    except:
+        如果出现异常执行的代码
+    ```
+
+    1. 捕获指定异常
+
+       ```python
+       try:
+           可能发生错误的代码
+       except 异常类型:
+           如果出现异常执行的代码
+       ```
+
+    2. 如果执行的代码异常类型和要捕获的异常类型不一样，则无法捕获异常
+
+    3. 一般try下方只放一行尝试执行的代码
+
+    4. 捕获多个指定异常
+
+    5. 捕获异常描述信息
+
+       1. ```python
+          try:
+              print(1/0)
+          # 捕获多个异常    
+          except (NameError,ZeroDivisionError) as result: #result为异常描述信息
+              print("分母为0")
+          else:
+              print("我是else，没有异常的时候执行的代码")
+          finally:
+              print("无论是否异常都要执行的代码")		#比如关闭打开的文件
+              
+          #捕获所有异常
+          except Exception as result
+          	..
+          ```
+
+    6. Exception是所有异常类的父类。
+
+    7. 自定义异常：在Python种，抛出自定义异常语法为`raise`异常类对象
+
+       1. ```python
+          class ShortInputError(Exception):
+              def __str__(self): #设置异常描述信息
+                  return f'异常信息'
+              def __init__(self,length, min_len):
+                  self.length = length
+                  self.min_len =min_len
+          def main():
+              try:
+                  con = input('输入密码： ')
+                  if len(con) < 3:
+                      raise ShortInputError(len(con),3)	#抛出自定义异常
+              except Exception as result:
+                  print(result)
+              else:
+                  print('密码已经输入完成')
+          ```
+
+39. 模块和包
+
+    1. 模块Module是一个Python文件，以.py结尾，包含了Python对象定义和Python语句。
+
+    2. 模块能定义函数，类和变量，模块里也能包含可执行的代码。
+
+    3. 导入模块方式
+
+       ```python
+       import 模块名
+       from 模块名 import 功能名1,功能名2，..
+       from 模块名 import *
+       import 模块名 as 别名
+       from 模块名 import 功能名 as 别名
+       #调用功能
+       模块名.功能名()
+       ```
+
+    4. 制作模块：自定义模块必须符合标识符命名规则。如`my_module.py`
+
+       1. ```python
+          def testA(a,b):
+              print(a+b)
+              
+          #普通测试功能
+          testA(1,1)
+          #测试信息，只有当前文件种调用该函数，其他导入的文件内不符合该条件，则不执行testA函数调用。
+          if __name__ == '__main__':
+              testA(1,1)
+          # __name__：为系统变量，即每个python文件的标识符。若__name__在自身模块下，则值为__main__。   
+          # 否则__name__的值为python的文件名
+          print(__name__)
+          ```
+
+    5. 模块定位顺序：（近到远）
+
+       1. 当前目录
+       2. 如果不在当前目录，Python则搜索在shell变量PythonPath下的目录
+       3. 如果都找不到，Python会查看默认路径。UNIX下，默认路径一般为`/usr/local/lib/python/`
+       4. 模块搜索路径存储在system模块的`sys.path`变量种。
+       5. 注意1：自己的文件名不要和已有模块名重复，负责导致模块功能无法使用
+       6. 注意2：使用`from`模块名`mport`功能的时候，如果功能名字重复，调用到的是最后定义或导入的功能。（Python是引用）`
+
+    6. `__all__`：表示import模块后只能导入这个列表中的元素。
+
+       1. ```python
+          __all__ = ['testA'] #表示只能使用A函数。
+          def testA():
+              print("testA")
+          def testB():
+          	print('TestB')
+          ```
+
+    7. 包：将有联系的模块组织在一起，即放到同一个文件夹下并且在这个文件夹创建一个名字为`__init__.py`的文件，那么这个文件夹就叫做包。
+
+       1. [New] - [Python Package] - 输入包名 - [OK] - 新建功能模块（有联系的模块）
+       2. 新建包后，包内部会自动创建`__init__.py`文件，这个文件控制着包的导入行为。
+       3. 导入包方法1：`import 包名.模块名`
+          1. 使用：`包名.模块名.目标（）`
+
+       4. 导入包方法2：必须在`__init__.py`文件中添加`__all__ =[]`，空值允许导入的模块列表。
+          1. 使用：`from 包名 import *`
+
+40. 案例，学生管理系统
+
+    1. 一般入口函数命名为`def run()`
+
+    2. 把列表中的数据存到文档文件当中。`__dict__`返回实例属性和值组成的**字典**
+
+    3. ```python
+       class A(object):
+           a = 0
+           def __init__(self):
+               self.b = 1
+       aa = A()
+       # 返回类内部所有属性和方法对应的字典
+       print(A.__dict__) # 输出：{'__module__': '__main__', 'a': 0, '__init__': <function A.__init__ at 0x00000197029DE9E0>, '__dict__': <attribute '__dict__' of 'A' objects>, '__weakref__': <attribute '__weakref__' of 'A' objects>, '__doc__': None} 
+       # 返回实例属性和值组成的字典
+       print(aa.__dict__) # 输出： {'b': 1}
+       ```
+
+    4. 文件种读取的数据都是字符串且字符串内部为字典数据，古需要转换数据类型，再转换字典为对象后存储到学员列表。
 
 
 
