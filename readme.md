@@ -743,7 +743,6 @@
        |---|---|
        |  列表、字典、集合 | 整型、浮点型、字符串、元组  | 
     
-
 28. 在函数中进行判断语句后使用`return`，当执行`return`后表示**退出当前函数**。
 
 29. 递归的特点：函数内部自己调用自己；必须有出口。
@@ -1352,6 +1351,34 @@
 
 
 
+
+
+# Selenium与Python
+
+1. 查看python3安装与环境变量：cmd命令查看`where python`
+
+2. 在cmd中输入：`pip3 install selenium`
+
+3. 驱动文件需要放在python目录下：`chromedriver.exe`和`geckodriver.exe`
+
+4. 操作代码：
+
+   ```python
+   #1.导包
+   from selenium import webdriver
+   #2.创建浏览器对象
+   driver = webdriver.Chrome()
+   #3.打开浏览器首页
+   driver.get('https://www.google.ca/')
+   #4.在搜索框中输入selenium
+   driver.find_element_by_name('q').send_keys('selenium')
+   #5.点击搜索按钮
+   driver.find_element_by_name('btnK').click()
+   #6.关闭浏览器
+   driver.quit()
+   ```
+
+   1. 
 
 
 
