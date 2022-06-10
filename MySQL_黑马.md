@@ -59,7 +59,19 @@
 
    8. DDL 表操作 数据类型：数值类型、字符串类型、日期时间类型。
 
-      1. 
+      1. ![数值](https://github.com/brant8/mypython/blob/master/pics/mysql_int.png)
+      2. DECIMAL：大小取决于精度和标度，比如 `123.45`，精度表示5，标度表示2。
+      3. 具体使用：
+         1. 比如 ：`age TINYINT UNSIGNED`表示无符号取值范围（即只能取正数）
+         2. 比如：`score double(4,1)`表示100以内的数，只有1个小数，如95.9。
+      4. ![字符串](https://github.com/brant8/mypython/blob/master/pics/mysql_char.png)
+      5. `char`性能好，`varchar()`性能差。
+         1. `char(10)`表示最大10个字符，不足10个空格自动补齐。
+         2. `varchar(10)`表示最大10个字符，若不足10个按多少有多少来算（需要去计算长度才知道占多少）。
+         3. 具体使用：如username使用varchar，gender使用char。
+      6. ![字符串](https://github.com/brant8/mypython/blob/master/pics/mysql_time.png)
+
+      
 
 
 
