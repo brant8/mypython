@@ -34,20 +34,22 @@
       | DQL  | Data Query Language        | 数据查询语言，用来查询数据库中表的记录                 |
       | DCL  | Data Control Language      | 数据控制语言，用来创建数据库用户、控制数据库的访问权限 |
 
-   5. DDL 数据库操作( `[..]`可选 )：
+4. ### DDL 库&表结构操作
+
+   1. DDL 数据库操作( `[..]`可选 )：
 
       1. 查询：查询所有数据库 `show databases;`  查询当前数据库 `select database();`
       2. 创建：`create database [if not exists] 数据库名 [default charset 字符集] [collate 排序规则];`
       3. 删除：`drop database [if exists] 数据库名;`
       4. 使用：`use 数据库名;`
 
-   6. DDL 表操作 查询：
+   2. DDL 表操作 **查询**：
 
       1. 查询当前数据库所有表：`show tables;`
       2. 查询表结构：`desc 表名;`
       3. 查询指定表的建表语句：`show create table 表名;`
 
-   7. DDL 表操作 创建：
+   3. DDL 表操作 **创建**：
 
       ```sql
       create table 表名(
@@ -57,7 +59,7 @@
       )[comment 表注释];
       ```
 
-   8. DDL 表操作 数据类型：数值类型、字符串类型、日期时间类型。
+   4. DDL 表操作 **数据类型**：数值类型、字符串类型、日期时间类型。
 
       1. ![数值](https://github.com/brant8/mypython/blob/master/pics/mysql_int.png)
       2. DECIMAL：大小取决于精度和标度，比如 `123.45`，精度表示5，标度表示2。
@@ -71,7 +73,313 @@
          3. 具体使用：如username使用varchar，gender使用char。
       6. ![字符串](https://github.com/brant8/mypython/blob/master/pics/mysql_time.png)
 
-      
+   5. 举例：
+
+      ```sql
+      create table employment(
+      	id int comment '编号',  --编号纯数字
+          workno varchar(10) comment '工号', --字符串类型，长度不超过10位
+          name varchar(10) comment '姓名', --字符串类型，长度不超过10位
+          gender char(1) comment '性别', --男/女，存储一个汉字
+          age tinyint unsigned comment '年龄', --正常人年龄，不可能存储负数
+          idcard char(10) comment '身份证号', --二代身份证号均为18位
+          entrydate date comment '入职时间'--取值年月日即可
+      ) comment ‘员工表';
+      ```
+
+   6. DDL 表操作 **修改**
+
+      1. 添加字段：`alter table 表名 add 字段名 类型(长度) [comment ‘注释’] [约束];`
+      2. 修改数据类型：`alter table 表名 modify 字段名 新数据类型(长度);`
+      3. 修改字段名和字段类型：`alter table 表名 change 旧字段名 新字段名 类型(长度) [comment "注释"] [约束]；`
+      4. 删除字段：`alter table 表名 drop 字段名;`
+      5. 修改表名：`alter table 表名 rename to 新名`
+
+   7. DDL 表操作 **删除**
+
+      1. 删除表：`drop table [if exists] 表名;`
+      2. 删除指定表，并重新创建该表：`truncate table 表名;`
+
+5. ### DML 数据操作
+
+   1. DML **添加**数据
+      1. 给指定字段添加数据：`insert into 表名(字段1，字段2,...) values(值1,值2,...);`
+      2. 给全部字段添加数据：`insert into 表名 values(值1,值2,...);`
+      3. 批量添加数据：`insert into 表名(字段1,字段2,...) values(值1,值2,...), (值1,值2,...);`
+      4. 批量添加数据：`insert into 表名 values(值1,值2,...),(值1,值2,...);`
+      5. *注意事项：插入数据时，字符串和日期型数据应该包含在引号中，且插入数据大小应在字段规定范围内*。
+   2. DML **修改**数据
+      1. 更新数据：`update 表名 set 字段名1 = 值1, 字段名2 = 值2,...[where 条件];`
+      2. *注意事项：如果没有条件，表示修改表中所有数据*
+   3. DML **删除**数据
+      1. 删除命令：`delete from 表名 [where 条件]`
+      2. *注意事项：如果没有条件，则会删除整张表的所有数据，删除语句不能删除某个字段的值（可以使用update）*
+
+6. ### DQL 查询数据
+
+   1. DQL语法 **编写顺序**：
+
+      1. `SELECT 字段列表 FROM 表名列表 WHERE 条件列表 GROUP BY 分组字段列表 HAVING 分组后条件列表 ORDER BY 排序字段列表 LIMIT 分页参数`
+
+   2. DQL **执行顺序**
+
+      1. `from` - `where` - `group by` - `select` - `order by` - `limit` ：使用表别名、字段别名时需要注意先后顺序
+
+      1. *分组通常与聚合函数配合，如count、max、min、avg、sum*
+
+   3. DQL **基本**查询
+
+      1. 查询多个字段：`select 字段1, 字段2,字段3, ... from 表名;`
+      2. 查询所有字段：`select * from 表名;` 一般工作不推荐写`*`
+      3. 设置别名：`select 字段1 [as '别名1']， 字段2 [as '别名2'] ... from 表名;` 其中`as`可以省略。
+      4. 去除重复记录：`select distinct 字段列表 from 表名;`
+
+   4. QDL **条件**查询
+
+      1. 语法：`select 字段列表 from 表名 where 条件列表;`
+
+      2. 条件
+
+         | 比较运算符       | 功能                                                         | 逻辑运算符  | 功能                         |
+         | ---------------- | ------------------------------------------------------------ | ----------- | ---------------------------- |
+         | >                | 大于                                                         | AND 或 &&   | 并且（多条件同时成立）       |
+         | >=               | 大于等于                                                     | OR 或 \|\|  | 或者（多个条件任意一个成立） |
+         | <                | 小于                                                         | NOT 或 !    | 非，不是                     |
+         | <=               | 小于等于                                                     | IS NOT NULL | 不是null的                   |
+         | <> 或 !=         | 不等于                                                       |             |                              |
+         | BETWEEN...AND... | 在某个范围之内（含最小、最大值）<br>若最小值和最大值顺序颠倒则查询不到。 |             |                              |
+         | IN(...)          | 在in之后的列表中的值，多选一                                 |             |                              |
+         | LIKE 占位符      | 模糊匹配（`'_'`匹配单个字符，`'%'`匹配人一个字符）           |             |                              |
+         | IS NULL          | 是NULL                                                       |             |                              |
+
+   5. DQL **聚合**函数 Aggregation Function
+
+      1. 将一列数据作为一个整体，进行纵向计算。**注意：null值不参与所有聚合函数运算**。
+      2. 常见聚合函数：count统计数量、max、min、avg、sum。
+      3. 语法：`select 聚合函数(字段列表) from 表名;`
+
+   6. DQL **分组**查询
+
+      1. 语法：`select 字段列表 from 表名 [where 条件] group by 分组字段名 [having 分组后过滤条件]`
+      2. where与having分别
+         1. 执行时机不同：where是分组之前进行过滤，不满足where条件，不参与分组；而having是分组后对结果进行过滤。
+         2. 判断条件不同：where不能对聚合函数进行判断，而having可以。
+         3. 执行顺序：where **>** 聚合函数 **>** having
+         4. *分组之后，查询的字段一般为聚合函数和分组字段，查询其他字段无任何意义。*
+      3. 例子：`select gender, count(*) from emp group by gender`根据男女分别统计数量
+      4. 例子：查询年龄小于45的员工，并根据工作地址分组，获取员工数量大于等于3的工作地址
+      5. `select workaddress, count(*) from emp where age < 45 group by workaddress having count(*) >=3;`
+      6. 讲解：先输出根据workaddress和count(*)选出工作地址&人数分组，**分组完后在结果中**筛选人数大于3的。
+
+   7. DQL **排序**查询
+
+      1. 语法：`select 字段列表 from 表名 order by 字段1 排序方式1, 字段2 排序方式2;`
+      2. 排序方式：`asc`升序（默认值）， `desc`降序
+
+   8. DQL **分页**查询
+
+      1. 语法：`select 字段列表 from 表名 limit 起始索引,查询记录数;`
+      2. **起始索引从0开始，起始索引 = （查询页码 - 1）* 每页显示记录数**
+      3. 分页查询是数据库的方言，不同的数据库有不同的实现，MySQL中是LIMIT。
+      4. 如果查询的是第一页数据，起始索引可以省略，直接简写为`limit 10` 
+
+7. ### DCL 用户控制管理
+
+   1. DCL 管理用户
+
+      1. 查询用户：`use mysql;` `select * from user;`
+      2. 创建用户：`create user '用户名'@'主机名' indentified by '密码';` 主机名表示允许在哪里访问。
+         1. 任意主机访问：`'用户名'@'%'`
+      3. 修改用户密码：`alert user '用户名'@'主机名' identified with mysql_native_password by '新密码';`
+      4. 删除用户：`drop user '用户名'@'主机名';`
+
+   2. DCL 常用权限控制
+
+      1. | 权限                | 说明     | 权限   | 说明               |
+         | ------------------- | -------- | ------ | ------------------ |
+         | ALL, ALL PRIVILEGES | 所有权限 | DELETE | 删除数据           |
+         | SELECT              | 查询数据 | ALTER  | 修改表             |
+         | INSERT              | 插入数据 | DROP   | 删除数据库/表/视图 |
+         | UPDATE              | 修改数据 | CREATE | 创建数据库/表      |
+
+      2. **查询**权限：`show grants for '用户名'@'主机名';`
+
+      3. **授予**权限：`grant 权限列表 on 数据库.表名 to '用户名'@'主机名';`
+
+         1. 比如：`grant all on itcast.* to 'heima'@'%';`
+
+      4. **撤销**权限：`revoke 权限列表 on 数据库名.表名 from '用户名'@'主机名';`
+
+      5. *注意：多个权限之间使用逗号分割；授权是，数据库名和表名可以使用`*`进行通配，代表所有。*
+
+8. ### 函数
+
+   1. 函数是指一段可以直接被另一端程序调用的程序或代码。
+
+   2. 使用场景：数据报表等信息直接调用函数快速返回。
+
+   3. 字符串函数
+
+      1. | 常用函数                     | 功能                                                         |
+         | ---------------------------- | ------------------------------------------------------------ |
+         | CONCAT（S1，S2，..Sn）       | 字符串拼接，将S1，S2，S3等拼接成一个字符串                   |
+         | LOWER（STR）                 | 将字符串str全部转为小写                                      |
+         | UPPER（STR）                 | 将字符串str全部转为大写                                      |
+         | LPAD（str, n, pad）          | 左填充，用字符串pad对str的左边进行填充，达到n个字符串长度。<br>当填充长度小于字符串长度，直接截取n个字符串。 |
+         | RPAD（str, n, pad）          | 右填充，用字符串pad对str的右边进行填充，达到n个字符串长度    |
+         | TRIM（str）                  | 去掉字符串头部和尾部的空格                                   |
+         | SUBSTRING（str, start, len） | 返回从字符串str从start位置起的len个长度的字符串。起始索引值为1。 |
+
+      2. ```sql
+         #比如
+         select rpad('abcdefg',8,'-');
+         select trim('&nbsp; hello world ');
+         #案例：员工工号统一5位数，不足5位数的全部在前面补0. 如00001
+         update emp set workno = lpad(workno, 5, '0');  -数据库数据直接变更，影响数据。
+         ```
+
+   4. 数值函数
+
+      1. | 常用函数      | 功能                               |
+         | ------------- | ---------------------------------- |
+         | CEIL（X）     | 向上取整                           |
+         | FLOOR（X）    | 向下取整                           |
+         | MOD（x, y）   | 返回x/y的模（余数）                |
+         | RAND（）      | 返回0~1内的随机数                  |
+         | ROUND（x, y） | 求参数x的四舍五入的值，保留y位小数 |
+
+      2. 比如：`select mod(3,4);`结果是3。`select mod(5,4);`结果是1。
+
+   5. 日期函数
+
+      1. | 常用函数   | 功能               | 常用函数                             | 功能                                              |
+         | ---------- | ------------------ | ------------------------------------ | ------------------------------------------------- |
+         | CURDATE()  | 返回当前日期       | MONTH（date）                        | 获取指定date的月份                                |
+         | CURTIME()  | 返回当前时间       | DAY（date）                          | 获取指定date的日期                                |
+         | NOW()      | 返回当前日期和时间 | DATE_ADD（date, INTERVAL expr type） | 返回一个日期/时间值加上一个时间间隔expr后的时间值 |
+         | YEAR(date) | 获取指定date的年份 | DATEDIFF（date1, date2）             | 返回起始时间date1和结束时间date2之间的天数        |
+
+      2. 比如：`select date_add(now(), INTERVAL 70 DAY);`显示当前时间70天后的时间，若为负数则往前70天。type：MONTH，YEAR，DAY
+
+   6. 流程函数
+
+      1. | 常用函数                                                     | 功能                                                         |
+         | ------------------------------------------------------------ | ------------------------------------------------------------ |
+         | `IF(value, t, f)`                                            | 如果value为true，则返回t，否则返回f                          |
+         | `IFNULL(value1, value2)`                                     | 如果value1不为空，返回value1，否则返回value2                 |
+         | `CASE WHEN [val1] THEN [res1] ... ELSE [default] END`        | 如果val1为true，返回res1，...否则返回default默认值（范围取值时常使用） |
+         | `CASE [expr] WHEN [VAL1] THEN [res1] ... ELSE [default] END` | 如果expr的值等于val1，返回res1，...否则返回default默认值     |
+
+      2. ```sql
+         select if(false, 'OK', 'Error');
+         select ifnull('','Default'); #返回空字符串
+         select ifnull(null,'Default'); #返回default
+         # 查询emp员工地址，北京/上海显示一线城市，其他二线城市
+         select
+         	name,
+         	(case workaddress when '北京' then '一线城市' when '上海' then '一线城市' else '二线城市' end) as '工作地址'
+         from emp;
+         ```
+
+9. ### 约束 Constraint
+
+   1. 作用域表中字段上的规则，用于限制存储在表中的数据。
+
+   2. 保证数据库中数据的正确、有效性和完整性。
+
+   3. | 约束                     | 描述                                                     | 关键字         |
+      | ------------------------ | -------------------------------------------------------- | -------------- |
+      | 非空约束                 | 限制该字段的数据不能为null                               | NOT NULL       |
+      | 唯一约束                 | 保证该字段的所有数据都是唯一、不重复的                   | UNIQUE         |
+      | 主键约束                 | 主键时一行数据的唯一表示，要求非空且唯一                 | PRIMARY KEY    |
+      | 默认约束                 | 保存数据时，如果未指定该字段的值，则采用默认值           | DEFAULT        |
+      | 检查约束(8.0.16版本之后) | 保证字段值满足一条件                                     | CHECK          |
+      | 外键约束                 | 用来让两张表的数据之间建立连接，保证数据的一致性和完整性 | FOREIGN KEY    |
+      | 自动增长                 | 仅限在primary key中，且在oracle中使用另外一种自增。      | AUTO_INCREMENT |
+
+   4. ```sql
+      create table  user_2(
+        id int primary key auto_increment comment '主键id',
+        name varchar(10) not null unique comment '姓名',
+        age int check ( age > 0 && age <= 120 ) comment '年龄',
+        status char(1) default '1' comment '状态',
+        gender char(1) comment '性别'
+      );
+      #插入数据例子
+      insert into user_2(name, age, status, gender) values ('Tom1',19,'1','男'),('Tom2',23,'1','男');
+      ```
+
+   5. *注意：若插入数据失败后显示null，再插入下一条数据时，自增ID会跳过一个数。原因时因为即使插入数据失败，插入数据时会向数据库申请主键，即使失败。其他报错情况不会主键自增*
+
+10. ### 外键约束
+
+    1. 用来让两张表的数据之间建立连接，从而保证数据的一致性和完整性。
+
+    2. **子表**：带有外键id的。
+
+    3. **父表/主表**：外键id为主键id的。
+
+    4. **添加**外键：
+
+       1. 创建：`create table 表名( 字段名 数据类型， ...  [constraint] [外键名称] FOREIGN KEY (外键字段名) REFERENCES 主表(主表列明) );`
+       2. 修改：`alter table 表名 add constraint 外键名称 foreign key (外键字段名) references 主键(主表列明);`
+       3. 比如 `alter table emp add constraint fk_emp_dept_id foreign key (dept_id) references dept(id);`
+
+    5. **删除**外键：`alter table 表名 drop foreign key 外键名称;` (子表的外键字段)
+
+    6. **删除/更新行为**
+
+       | 行为        | 说明                                                         |
+       | ----------- | ------------------------------------------------------------ |
+       | NO ACTION   | 在父表中删除/更新对应记录时，首先检查该记录是否有对应外键，如果有则不允许删除/更新。（与RESTRICT一致） |
+       | RESTRICT    | 在父表中删除/更新对应记录时，首先检查该记录是否有对应外键，如果有则不允许删除/更新。（与NO ACTION一致） |
+       | CASCADE     | 在父表中删除/更新对应记录时，首先检查该记录是否有对应外键，如果有，则也删除/更新外键在子健中的记录。 |
+       | SET NULL    | 在附表中删除对应记录时，首先检查该记录是否有对应外键，如果有则设置子表中该外键值为null（要求改外键允许取null）。 |
+       | SET DEFAULT | 父表有变更时，子表将外键列设置成一个默认的值（Innodb不支持）。 |
+
+    7. CASECADE 语法：`alter table 表名 add constriant 外键名称 foreign key (外键字段) references 主表名(主表字段名) on update cascade on delete cascade;`
+
+    8. SET NULL 语法：`alter table 表名 add constriant 外键名称 foreign key (外键字段) references 主表名(主表字段名) on update set null on delete set null;`
+
+11. ### 多表查询
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
