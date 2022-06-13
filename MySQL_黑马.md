@@ -121,7 +121,7 @@
 
       1. `SELECT 字段列表 FROM 表名列表 WHERE 条件列表 GROUP BY 分组字段列表 HAVING 分组后条件列表 ORDER BY 排序字段列表 LIMIT 分页参数`
 
-   2. DQL **执行顺序**
+   2. DQL **执行顺序**：
 
       1. `from` - `where` - `group by` - `select` - `order by` - `limit` ：使用表别名、字段别名时需要注意先后顺序
 
@@ -342,6 +342,126 @@
     8. SET NULL 语法：`alter table 表名 add constriant 外键名称 foreign key (外键字段) references 主表名(主表字段名) on update set null on delete set null;`
 
 11. ### 多表查询
+
+    1. **一对多**：一个部门对应多个员工，一个员工对应一个部门。
+
+       1. 实现：在多的一方建立外键，指向一的一方的主键。
+
+    2. **多对多**：一个选胜可以选修多门课程，一门课程也可以供度过学生选择。
+
+       1. 实现：建立第三张中间表，中间表至少包含两个外键，分别关联两方主键。
+
+       2. 中间表外键语法：
+
+          ```sql
+          create table student_course(
+              id int auto_increment comment '主键' primary key,
+              studentid int not null comment '学生ID',
+             	courseid int not null comment '课程ID',
+              constraint fk_courseid foreign key (courseid) reference course(id),
+              constraint fk_studentid foreign key (studentid) reference student (id)
+          ) comment '学生课程中间表';
+          ```
+
+    3. **一对一**：一对一关系，用于单表拆分，将一张表的基础字段放在一张表中，其他的详情字段放在另一张表中，提生操作效率。
+
+       1. 实现：在任意一方加入外键，关联另一方的主键，并且设置外键为唯一的UNIUQUE。
+
+    4. **多表查询介绍**
+
+       1. 笛卡尔积：数学中，两个集合A集合和B集合的所有组合情况，多表查询时，需要消除无效的笛卡尔积。
+       2. 连接查询
+          1. 内连接：相当于查询A、B交集部分数据
+          2. 左外连接：查询左表所有数据，以及两张表交集部分数据
+          3. 右外连接：查询右表所有数据，以及两张表交集部分数据
+          4. 自连接：当前与自身的连接查询，子链接必须使用表别名
+       3. 子查询
+
+    5. 连接查询 内连接
+
+       1. **隐士内连接**：`select 字段列表 from 表1, 表2 where 条件...;`
+       2. **显示内连接**：`select 字段列表 from 表1 [inner] join 表2 on 连接条件..;` 关键字inner可以省略。
+
+    6. 连接查询 外连接
+
+       1. **左外连接**：`select 字段列表 from 表1 left [outer] join 表2 on 条件...;`
+          1. 比如：查询emp表的所有数据，和对应的部门信息（emp有一条记录没有关联数据也会显示出来）
+       2. **右外连接**：`select 字段列表 from 表1 right [outer] join 表2 on 条件...;`
+          1. 比如：查询dept表的所有数据，和对应的员工信息（所有部门所对应的员工）
+
+    7. 自连接 自己连接自己
+
+       1. **自连接**语法：`select 字段列表 from 表A 别名A join 表A 别名B on 条件...;`
+       2. 子链接查询，可以是内连接查询，也可以是外连接查询。
+
+    8. **联合查询** union， union all
+
+       1. union查询：把多次查询的结果合并起来，形成一个新的查询结果集。
+
+       2. ```sql
+          #语法
+          select 字段列表1 from 表A ...  #结果集1
+          union [all]					#有all结果集1和2合并保留重复，没有all结果集1和2合并且去重复
+          select 字段列表2 from 表B ...; #结果集2
+          #字段列表1和2必须保持一致，字段类型也需要保持一致
+          ```
+
+       3. 注意：*对于联合查询的多张表的列数必须保持一致，字段类型也需要保持一致*。
+
+    9. **子查询**
+
+       1. 概念：SQL语句中嵌套select语句，成为嵌套查询，又称子查询。
+
+       2. 语法：`select * from t1 where column1 = (select column1 from t2);`
+
+       3. 子查询外部的语句可以是 insert / update / delete / select 的任何一个。可以进行多层嵌套。
+
+       4. 根据子查询结果不同，分为：
+
+          1. **标量子查询**，即子查询结果为单个值（数字、字符串、日期等最简单形式）
+
+             1. 比如：查询销售部的所有员工信息
+             2. 分开查询：`select id from dept where name = "销售部"` 和 `select * from emp where dept_id = 4`
+             3. 子查询形式：`select * from emp where dept_id = (select id from dept where name = "销售部")`
+
+          2. **列子查询**，即子查询结果为一列，可以是多行
+
+             1. 常用的操作符：
+
+                | 操作符 | 描述                                   |
+                | ------ | -------------------------------------- |
+                | IN     | 在指定的集合范围内，多选一             |
+                | NOT IN | 不在指定的集合范围之内                 |
+                | ANY    | 子查询返回列表中，有任意一个满足即可   |
+                | SOME   | 与ANY等同，使用SOME的地方都可以使用ANY |
+                | ALL    | 子查询返回列表的所有值都必须满足       |
+
+             2. 比如：查询销售部和市场部的所有员工信息
+
+             3. 分开查询：`select id from dept where name='销售部' or name='市场部'`和`select * from emp where dept_id in (2,4)`
+
+             4. 子查询形式：`select * from emp where dept_id in (select id from dept where name='销售部' or name='市场部')`
+
+          3. **行子查询**，即子查询结果为一行（可以多列）
+
+             1. 常用操作符：=、<>、IN、NOT IN。
+             2. 比如：查询与张无忌的薪资及直属领导相同的员工信息
+             3. 分开查询：`select salary, managerid from emp where name = '张无忌';`和`select * from emp where salary =12500 and managerid = 1;`
+             4. 子查询等同形式：`select * from emp where (salary, managerid) = (12500, 1);`
+             5. 子查询形式：`select * from emp where (salary, managerid) = (select salary, managerid from emp where name = '张无忌');`
+
+          4. **表子查询**，即子查询结果为多行多列
+
+             1. 常用的操作符：IN
+             2. 比如：查询与张三、李四的职位和薪资相同的员工信息
+             3. 分开查询：`select job, salary from emp where name = '张三' or name ='李四';`和`select * from emp where(job, salary) in ( ('职员',3750),('销售',4600) );`
+             4. 子查询形式：`select * from emp where(job, salary) in (select job, salary from emp where name = '张三' or name ='李四');`
+
+       5. **提示**：多张表查询时，不要一次性关联所有表，两两关联，即一次关联两个，每次关联使用`and`连接关联条件。
+
+       6. IDEA格式化（美化）行阅读：CTRL + ALT + L
+
+       7. 
 
 
 
