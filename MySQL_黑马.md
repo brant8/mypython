@@ -1073,7 +1073,7 @@
        1. 为了保证数据库表的安全性，开发人员在操作tb_user表使，只能看到的用户的基本字段，屏蔽手机号和邮箱两个字段。
        2. 查询每个学生锁选秀的课程（三张表联查），这个功能在很多的业务中都有使用到，为了简化操作，定义一个视图。
 
-19. ### 存储过程
+19. ### 存储过程 procedure
 
     1. 介绍
 
@@ -1123,28 +1123,361 @@
 
     8. 变量
 
-       1. 系统变量：是MySQL服务器提供，不是用户定义的，属于服务器层面。分为全局变量Global、会话变量Session（当前sql窗口）。
+       1. **系统变量**：是MySQL服务器提供，不是用户定义的，属于服务器层面。分为全局变量Global、会话变量Session（当前sql窗口）。
 
-       2. 查看系统变量
+          1. 查看系统变量	
 
           ```sql
           show [session | global] variables; #查看所有系统变量
-          show [session | global] variables like '......'; #可以通过like模糊匹配方式查找变量
+          show [session | global] variables like '......'; #可以通过like模糊匹配方式查找变量 如'auto&'
           select @@[session | global] 系统变量名; #查看指定变量的值
           ```
 
-       3. 设置系统变量
+          1. 设置系统变量
 
           ```sql
           set [session | global] 系统变量名 = 值;
           set @@[session | global] 系统变量名 = 值;
           ```
 
-       4. 
+          1. 如果没有指定session/global，默认是session，会话变量。
+          2. mysql服务重启之后，所设置的全局参数会失效，想要不失效，可以再`/etc/my.cnf`中配置。
 
+       2. **用户自定义变量**：用`@变量名`使用即可
 
+          1. 赋值
 
+             ```sql
+             set @var_name=expr[,@var_name = expr]...; #多个变量赋值
+             set @var_name:=expr[,@var_name:=expr]...;
+             select @var_name:=expr[,@var_name:=expr]...; #使用select多个变量赋值
+             select 字段名 into @var_name from 表名; #可以使用函数字段如count(*)
+             ```
 
+          2. 使用：`select @var_name;`
+
+          3. 注意：用户定义的变量无需对齐进行声明或初始化，只不过获取到的值为NULL。
+
+       3. **局部变量**：需要定义在局部生效的变量，需要`declare`声明。可用作存储过程内的局部变量和输入参数，局部变量的范围是在其内声明`begin..end`块。
+
+          1. 声明：`declare 变量名 变量类型 [default ...];`
+
+          2. 变量类型就是数字库字段类型：int、bigint、char、varchar、date、time等。
+
+          3. 赋值
+
+             ```sql
+             set 变量名 = 值;
+             set 变量名 := 值;
+             select 字段名 into 变量名 from 表名...;
+             #比如
+             create procedure p2()
+             begin
+             	declare stu_count int default 0; #局部变量在begin...end块中间有效
+             	select count(*) into stu_count from student;
+             	select stu_count;
+             end;	
+             ```
+
+    9. **if**
+
+       1. ```sql
+          if 条件1 then
+          	...
+          elseif 条件2 then
+          	...
+          else
+          	...
+          end if;	
+          ```
+
+    10. **存储类型参数**
+
+        1. | 类型  | 含义                                          | 备注 |
+           | ----- | --------------------------------------------- | ---- |
+           | in    | 该类参数作为输入，也就是需要调用时传入值      | 默认 |
+           | out   | 该类参数作为输出，也就是gai参数可以作为返回值 |      |
+           | inout | 既可以作为输入参数，也可以作为输出参数        |      |
+
+        2. 用法：
+
+           ```sql
+           create procedure 存储过程名称([in/out/inout 参数名 参数类型])
+           begin
+           	-- sql语句
+           end;	
+           #调用的时候
+           #比如： call(68, @result); 
+           #其中 @result 为输出变量 属于用户自定义变量
+           ```
+
+    11. **case**
+
+        1. ```sql
+           #语法一
+           case case_value
+           	when when_value1 then statement_list1
+           	[when when_value2 then statement_list2]...
+           	[else statement_list]
+           end case;	
+           #语法二
+           case 
+           	when search_condition1 then statement_list1
+           	[when search_condition2 then statement_list2]...
+           	[else statement_list]
+           end case;
+           ```
+
+    12. **while**
+
+        1. ```sql
+           #先判定条件，如果条件为true，则执行逻辑，否则，不执行逻辑
+           while 条件 do
+           	sql逻辑...
+           end while;	
+           #例子
+           create procedure p1(in n int)
+           begin
+           	declare total int default 0;
+           	while n>0 do
+           		set total := total + n;
+           		set n := n-1;
+           	end while;
+           	select total;
+           end;
+           call p1(5);
+           ```
+
+    13. **repeat**
+
+        1. ```sql
+           #先执行一次逻辑，然后判定逻辑是否满足，如果满足，则退出。如果不满足，则继续下一次循环
+           repeat
+           	SQL逻辑..
+           	until 条件
+           end repeat;	
+           ```
+
+    14. **loop死循环**
+
+        1. 如果不在SQL逻辑中增加退出循环的条件，可以用其来实现简单的死循环。
+
+        2. Loop配合使用：
+
+           1. `leave`：配合循环使用，退出循环
+           2. `iterate`：必须用在循环中，作用时跳过当前循环剩下的语句，直接进入下一次循环。
+
+        3. ```sql
+           [begin_label:] loop
+           	SQL逻辑...（比如退出 leave begin_label;）
+           end loop [end_label];    
+           ```
+
+    15. **游标 Cursor**
+
+        1. 用来存储查询结果集的数据类型，在存储过程和函数中使用游标对结果集进行循环处理。
+
+        2. 游标的使用包括游标的声明、open、fetch和close。
+
+        3. ```sql
+           #声明游标
+           declare 游标名称 cursor for 查询语句; #把查询的结果集存到游标当中
+           #打开游标
+           open 游标名称：
+           #获取游标记录
+           fetch 游标名称 into 变量[,变量]; #把对应结果集字段名分别赋给变量，后面可再加insert赋值给别的表
+           #关闭游标
+           close 游标名称;
+           ```
+
+        4. 案例：根据传入的参数usage，查询表tb_user中，所有用户年龄小于等于usage的用户name和专业profession，并将用户的姓名和专业插入到所创建的一张新表(id, name, profession)中，通过循环把游标结果集快速赋值。注意：变量声明需要在游标声明之前，否则报错。
+
+    16. **条件处理程序 Handler**
+
+        1. 可以用来定义再流程控制结构执行过程中遇到问题时对应的处理步骤。
+
+        2. ```sql
+           declare handler_action handler for condition_value [,condition_value]... statement;
+           #比如循环游标有错误代码（无限循环没有正常关闭），出现错误码自动关闭游标
+           #declare exit handler for SQLSTATE '02000' close u_cursor;
+           
+           handler_action
+           	continue：继续执行当前程序
+           	exit:终止执行当前程序
+           condition_value
+           	SQLSTATE sqlstate_value：状态码，如02000
+           	SQLWARNING：所有以01开头的SQLSATE代码的简写
+           	NOT FOUND：所有以02开头的SQLSTATE代码的简写
+           	SQLEXCEPTION：所有没有被SQLWARNING或NOT FOUND捕获的SQLSTATE代码的简写
+           	
+           ```
+
+20. ### 存储函数 function
+
+    1. 存储函数是有返回值的存储过程，存储函数的参数只能是IN类型。**与存储过程类似**，但必须要有返回值。
+
+    2. ```sql
+       create function 存储函数名称([参数列表])
+       returns type [characteristic...]
+       begin
+       	--sql语句
+       	return ...;
+       end;
+       
+       characteristic说明：
+       	deterministic：相同的输入参数总是产生相同的结果
+       	no sql：不包含sql语句。
+       	reads sql data：包含读取数据的语句，但不包含写入数据的语句。
+       ```
+
+21. ### 触发器 trigger
+
+    1. 触发器是与表有关的数据对象，指在insert、update、delete之前或之后，触发并执行触发器中定义的SQL语句。
+
+    2. 触发器的这种特性可以协助应用在数据库端确保数据行的完整性，日志记录，数据校验等操作。
+
+    3. 使用别名OLD和NEW来引用触发器中发生变化的记录内容，这与其他的数据库是相似的。现在触发器还支持吃触发级，不支持语句级触发。
+
+    4. | 触发器类型     | NEW和OLD                                             |
+       | -------------- | ---------------------------------------------------- |
+       | insert型触发器 | new表示要将或者已经新增的数据                        |
+       | update型触发器 | old表示修改之前的数据，new表示将要或已经修改后的数据 |
+       | delete型触发器 | old表示将要或者已经删除的数据                        |
+
+    5. ```sql
+       #创建
+       create tigger tigeger_name
+       beofore/after insert/update/delete
+       on table_name for each row --行级触发器
+       begin 
+       	trigger_stmt 
+       	#比如下面的，更新表格inser后触发记录变更操作到日志表中。new.xxx和old.xxx表示新旧数据
+       	insert into user_log(id,operation,operation_time,operate_id,operate_params) values
+       	(null,'insert',now,new.id,contact('插入的数据内容为： id=',new.id,',name=',new.name));
+       end;
+       #查看
+       show triggers;
+       #删除
+       drop trigger [schema_name.]trigger_name; --如果没有指定schema_name，默认为当前数据库
+       ```
+
+    6. 案例：通过触发器记录tb_user表的数据变更日志，将变更日志插入到日志表user_log中。
+
+22. ### 锁
+
+    1. 锁是计算机协调多个进行或线程并发访问某一资源的机制。
+
+    2. 数据库中，除传统的计算资源（CPU、RAM、I/O）的争用以外，数据也是一种供许多用户共享的资源。
+
+    3. MySQL中的锁：
+
+       1. 全局锁：锁定数据库中的所有表。[示例图](https://github.com/brant8/mypython/blob/master/pics/mysql_full_lock.png)
+       2. 表级锁：每次操作所著整张表。
+       3. 行级锁：每次操作锁住对应的行数据。
+
+    4. **全局锁**
+
+       1. 特点1：如果在主库上备份，那么在备份期间都不能执行更新，业务基本上就得停摆。
+       2. 特点2：如果在从库上备份，那么在备份期间从库不能执行主库同步过来的二进制日志binlog，会导致主从延迟。
+       3. 在InnoDB引擎中，我们可以在备份时加上参数`--single-transaction`参数来完成不加锁的一致性数据备份`mysqldump`。
+
+    5. **表级锁**
+
+       1. 每次操作所住整张表。锁定粒度大，发生锁冲突的概率最高，并发度最低。应用在MyISAM、InnoDB、BDB等存储库中。
+
+       2. 表级锁，分为三类
+
+          1. **表锁**：
+
+             1. 表共享读锁 read lock：[示例图](https://github.com/brant8/mypython/blob/master/pics/mysql_readlock.png) 不会阻塞其他客户端的读，但是会阻塞写。
+
+             2. 表独占写锁 write lock：[示例图](https://github.com/brant8/mypython/blob/master/pics/mysql_writelock.png) 自身可读写，会阻塞其他客户端的读/写。
+
+                ```sql
+                加锁：lock tables 表名... read/write
+                释放锁：unlock tables / 客户端断开连接
+                ```
+
+          2. **元数据锁 meta data lock**：
+
+             1. MDL加锁过程是系统自动控制，无需显示使用，在访问一张表的时候会自动加上。
+
+             2. MDL锁主要作用是维护表元数据的数据一致性，在表上有活动事务的时候（未完成的事务），不可以对元数据进行写入操作。为了避免DML与DDL冲突，保证读写的正确性。
+
+             3. 在MySQL5.5中引入MDL，当对一张表进行增删改查的时候，加MDL读锁（共享）；当对表结构进行变更操作的时候，加MDL写锁（排他）。
+
+             4. | 对应SQL                                       | 锁类型                                 | 说明                                             |
+                | --------------------------------------------- | -------------------------------------- | ------------------------------------------------ |
+                | lock table xxx read/write                     | share_read_only / shared_no_read_write |                                                  |
+                | select、select...lock in share mode           | shared_read(读锁)                      | 与shared_read、shared_write兼容，与exclusive互斥 |
+                | insert、update、delete、select ... for update | shared_write(写锁)                     | 与shared_read、shared_write兼容，与exclusive互斥 |
+                | alter table...                                | exclusive(排他)                        | 与其他的MDL都互斥                                |
+
+             5. 查看元数据锁
+
+                ```sql
+                select object_type, object_schema, object_name, lock_type,lock_duration from performance_schema.metadata_locks;
+                ```
+
+          3. **意向锁**：
+
+             1. 为了避免DML在执行时，加的行锁与表锁的冲突，在InnoDB中引入了意向锁，是的表锁不用检查每行数据是否加锁，使用意向锁来减少表锁的检查。[图](https://github.com/brant8/mypython/blob/master/pics/mysql_yixianglock.png)
+
+             2. ```sql
+                #意向共享锁 IS：
+                	由语句 select...lock in share mode 添加
+                #意向排他锁 IX：
+                	由 insert、update、delete、select...for update 添加。
+                #查看意向锁及行锁的加锁情况
+                select object_schema, object_name, index_name, lock_type, lock_mode, lock_data from performance_schema.data_locks;
+                ```
+
+          4. **行级锁**
+
+             1. 行级锁，每次操作锁对应的行数据。
+
+             2. 锁定粒度最小，发生锁冲突的概率最低，并发读最高。应用在InnoDB存储引擎中。
+
+             3. Innodb的数据是基于索引组织的，行锁是通过对索引上的索引项加锁来实现的，而不是对记录加的锁。
+
+             4. 对于行级锁，主要分三类：
+
+                1. 行锁 Record Lock：锁定单个行记录的锁，放置其他事务对此进行update和delete。在RC、RR隔离级别下都支持。
+                2. 间隙锁 Gap Lock：锁定索引记录间隙（不含该记录），确保索引记录间隙不变，放置其他事务在这个间隙进行insert，产生幻读。在RR隔离级别下都支持。
+                3. 临键锁 Next-key Lock：行锁和间隙锁组合，同时锁住数据，并所著数据前面的间隙Gap。在RR隔离级别下支持。
+
+             5. InnoDB实现了以下两种行锁
+
+                1. 共享锁 S：允许一个事务去读一行，阻止其他事务获得相同数据集的排他锁。
+
+                2. 排他锁 X：允许获取其他锁的事务更新数据，阻止其他事务获取相同数据集的共享锁和排他锁。
+
+                3. | 当前锁类型 \ 请求锁类型 | S 共享锁 | X 排他锁 |
+                   | ----------------------- | -------- | -------- |
+                   | S 共享锁                | 兼容     | 冲突     |
+                   | X 排它锁                | 冲突     | 冲突     |
+
+                4. 行锁
+
+                   | SQL                           | 行锁类型   | 说明                                     |
+                   | ----------------------------- | ---------- | ---------------------------------------- |
+                   | insert                        | 排他锁     | 自动加锁                                 |
+                   | update                        | 排他锁     | 自动加锁                                 |
+                   | delete                        | 排它锁     | 自动加锁                                 |
+                   | select (正常)                 | 不加任何锁 |                                          |
+                   | select ... lock in share mode | 共享锁     | 需要手动在select之后加lock in share mode |
+                   | select ... for update         | 排他锁     | 需要手动在select之后加for update         |
+
+             6. 默认情况下，InnoDB在Repeatable Read事务隔离级别运行，在InnoDB使用next-key锁进行搜索和索引扫描，以防止幻读。
+
+                1. 针对唯一索引进行检索时，对已存在的记录进行等值匹配时，将会自动**优化为行锁**。
+                2. InnoDB的行锁时针对于索引加的锁，不通过索引条件检索数据，那么InnoDB将对表中的所有记录加锁，此时就会**升级为表锁**。
+                3. 索引上的等值查询（唯一索引），给不存在的记录加锁时，优化为间隙锁。
+                4. 索引上的等值查询（普通索引），向右遍历时最后一个值不满足查询需求时，next-key lock退化为间隙锁。
+                5. 索引上的范围查询（唯一索引）--会访问到不满足条件的第一个值为止。
+                6. *注意：间隙锁唯一的目的时防止其他事务插入间隙。间隙锁可以共存，一个事务采用的间隙锁不会阻止另一个事务在同一间隙上采用间隙锁*。
+
+             7. 
 
 
 
