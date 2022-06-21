@@ -1477,7 +1477,286 @@
                 5. 索引上的范围查询（唯一索引）--会访问到不满足条件的第一个值为止。
                 6. *注意：间隙锁唯一的目的时防止其他事务插入间隙。间隙锁可以共存，一个事务采用的间隙锁不会阻止另一个事务在同一间隙上采用间隙锁*。
 
-             7. 
+23. ### InnoDB引擎
+
+    1. 逻辑存储结构：[图示](https://github.com/brant8/mypython/blob/master/pics/mysql_innodb2.png)
+       1. 表空间 Table Space： idb文件，一个mysql实例可以对应多个表空间，用于存储记录、索引等数据。
+       2. 段 Segment：分为数据段 leaf node segment、索引段 non-leaf node segment、回滚段 rollback segment，InnoDB是索引组织表，数据段就是B+数的叶子节点，索引段即为B+数的非叶子节点。段用来管理多个Extent（区）。
+       3. 区 Extent：表空间的单元结构，每个区的大小为1M。默认情况下，InnoDB存储引擎页大小为16K，及一个区中一共有64个连续的页。
+       4. 页 Page：是InnoDB存储引擎磁盘管理的最小单元，每个页的大小默认为16KB。为了保证页的连续性，InnoDB存储引擎每次磁盘申请4-5个区。
+       5. 行 Row：InooDB存储引擎数据是按行进行存放的。
+
+    2. 架构 Architecture
+
+       1. 内存结构 In-Memory Structures
+
+          1. Bufferr Pool：缓冲池，[图示](https://github.com/brant8/mypython/blob/master/pics/mysql_bufferpool.png) 。
+             1. 是主内存的一个区域，里面可以缓存磁盘上经常操作的真实数据，在执行增删改查操作时，先操作缓冲池中的数据（若缓冲池没有数据，则从磁盘加载并缓冲），然后再以一定频率刷新到磁盘，从而减少磁盘IO，加快处理速度。
+             2. 缓冲池以Page页为单位，底层采用链表数据结构管理Page。根据状态，Page分为三类。
+                1. free page：空闲page，未被使用。
+                2. clean page：被使用page，数据没有被修改过。
+                3. dirty page：脏页，被使用page，数据被修改过，页中数据与磁盘的数据产生了不一致。
+          2. Change Buffer：
+             1. 更改缓冲区（针对于非唯一二级索引页），在执行DML语句时，如果这些数据Page没有在buffer pool中，不会直接操作磁盘，而会将数据变更存在缓冲区change buffer中，在未来数据被读取时，在将数据合并恢复到buffer pool中，再将合并后的数据刷新到磁盘中。
+             2. Change Buffer的意义：与聚集索引不同，二级索引通常是非唯一的，并且以相对随机的顺序插入二级索引。同样，删除和更新可能会影响索引树中不相邻的二级索引页，如果每一次都操作磁盘，会造成大量的磁盘IO。有了changebuffer之后，我们可以在缓冲池中进行合并处理，减少磁盘IO。
+          3. Adaptive Hash Index：
+             1. 自适应hash索引，用于优化对buffer pool数据的查询。InnoDB存储引擎会监控表上各索引页的查询，如果观察到hash索引可以提升速度，则建立hash索引，称之为自适应hash索引。
+             2. 自适应哈希索引，无需人工干预，时系统根据情况自动完成。
+             3. 参数：`adaptive_hash_index`
+          4. Log Buffer：
+             1. 日志缓冲区，用来保存要写入到磁盘中的log日志数据（redo log、undo log），默认大小为16MB，日志缓冲区的日志会定期刷新到磁盘中。如果需要更新、插入或删除许多事务，增加日志缓冲区的大小可以节省磁盘IO。
+             2. 参数：`innodb_log_buffer_size ` 缓冲区大小；`innodb_flush_log_at_trx_commit` 日志刷新到磁盘时机。
+                1. `1`：日志在每次书屋提交时写入并刷新到磁盘
+                2. `0`：每秒将日志写入并刷新到磁盘一次。
+                3. `2`：日志在每次事务提交后写入，并每秒刷新到磁盘一次。
+
+       2. 磁盘结构 On-disk Structures
+
+          1. SystemTablespace：
+             1. 系统表空间时更改缓冲区的存储区域。如果表实在系统表空间而不是每个表文件或通用表空间中创建的，它也可能包含表和索引数据。
+             2. 参数：`innodb_data_file_path`
+          2. File-Per-Table Tablespaces：
+             1. 每个表的文件表空间包含单个InnoDB表的数据和索引，并存储在文件系统上的单个数据文件中。
+             2. 参数：`innodb_file_per_table`
+          3. General Tablespaces：
+             1. 通用表空间，需要通过create tablespace语法创建通用表空间，在创建表时，可以指定该表空间。
+             2. 语法：`create tablespace xxx add datafile 'file_name.ibd' engine=engine_name;`
+             3. 创建表空间以后，然后可以通过`create table xxx...tablespace ts_name`来指定数据表存放的位置。
+          4. Undo Tablespaces：
+             1. 撤销表空间，MySQL实例在初始化时会自动创建两个默认的undo表空间，初始大小16M，用于存储undo log日志。
+          5. Temporary Tablespaces：
+             1. InnoDB使用会话临时表空间和全局临时表空间。存储用户创建的临时表等数据。
+          6. Doublewrite Buffer Files：
+             1. 双写缓冲区，innoDB引擎将数据页从buffer pool刷新到磁盘前，先将数据页写入双鞋缓冲区文件中，便于系统异常时恢复数据。
+             2. 文件后缀：`xx.dblwr`
+          7. Redo Log：
+             1. 重做日志，是用来实现事务的持久性。
+             2. 该日志文件由两部分组成：
+                1. 重做日志缓冲 redo log buffer：在内存中。
+                2. 重做日志文件 redo log：在磁盘中。
+             3. 当事务提交之后会把所有修改信息都存到该日志中，用于在刷新脏页到磁盘时，发生错误时，进行数据恢复使用。
+             4. 以循环方式写入重做日志文件，设计两个文件`ib_logfile0`和`ib_logfile1`
+
+       3. 后台线程
+
+          1. Master Thread	
+
+             1. 核心后台线程，负责调度其他线程，还将负责缓冲池中的数据异步刷新到磁盘中，保持数据的一致性，还包括脏页的刷新、合并插入缓存、undo页的回收。
+
+          2. IO Thread
+
+             1. 在InnoDB存储引擎中大量使用了AIO来处理IO请求，这样可以极大的提高数据库的性能，而IO Thread主要负责这些IO请求的回调。
+
+             2. | 线程类型             | 默认个数 | 职责                         |
+                | -------------------- | -------- | ---------------------------- |
+                | Read thread          | 4        | 负责读操作                   |
+                | Write thread         | 4        | 负责写操作                   |
+                | Log thread           | 1        | 负责将日志缓冲区刷新到磁盘   |
+                | Insert buffer thread | 1        | 负责将写缓冲区内容刷新到磁盘 |
+
+          3. Purge Thread
+
+             1. 主要用于回收事务已经提交了的undo log，在事务提交之后，undo log可能不用了，就用它来回收。
+
+          4. Page Cleaner Thread
+
+             1. 协助Master Thread刷新脏页到磁盘的线程，它可以减轻Master Thread的工作压力，减少阻塞。
+
+24. ### 事务原理(理解性)
+
+    1. 事务是一组操作的集合，它是一个不可分割的工作单位，事务会把所有的操作作为一个整体，一起向系统提交或撤销操作请求，及这些操作要么同时成功，要么同时失败。
+
+    2. 事务特性：原子性Atomicity、一致性Consistency、隔离性Isolation、持久性Durability。[图解](https://github.com/brant8/mypython/blob/master/pics/mysql_shiwu.png)
+
+    3. **redo log**
+
+       1. 重做日志，记录的是事务提交时数据页的物理修改，是用来实现事务的**持久性**。
+       2. 该日志文件由两部分组成：
+          1. redo log buffer 重做日志缓冲：内存中
+          2. redo log file 重做日志文件：磁盘中
+
+    4. **undo log**
+
+       1. 回滚日志，用于记录数据被修改前的信息。作用包括：提供回滚 和 MVCC（多版本并发控制）。**原子性**。
+       2. undo log 和redo log记录物理日志不一样，它是逻辑日志。可以认为delete了一条记录时，undo log中会记录一条对应的insert记录，反之亦然，当update一条记录时，它记录一条对应相反的update记录。当执行rollback时，就可以从undo log中的逻辑记录读取到响应的内容并进行回滚。
+       3. undo log销毁：undo log在事务执行时产生，事务提交时，并不会立即删除undo log，因为这些日志可能还用于MVCC。
+       4. undo log存储：undo log采用段的方式进行管理和记录，存放在前面介绍的rollback segment回滚段中，内部包含1024个undo log segment。
+
+    5. **MVCC**
+
+       1. 当前读：
+
+          1. 读取的时记录的最新版本，读取时还要保证其他并发事务不能修改当前记录，会对读取的记录进行加锁。
+          2. 对于我们的日常操作，如：`select...lock in share mode`共享锁，`select...for update、insert、delete`排他锁，都是一种当前读。
+
+       2. 快照读：
+
+          1. 简单的select不加锁就是快照读，读取的时记录数据的可见版本，有可能是历史数据，不加锁，是非阻塞读。
+          2. Read Committed：每次select，都声称一个快照读。
+          3. Repeatable Read：开启事务后第一个select语句才是快照读的地方。
+          4. Serializable：快照读会退化为当前读。
+
+       3. MVCC - Multi-Version Concurrency Control，多版本并发控制。指维护一个数据的多个版本，使得读写操作没有冲突，快照读为MySQL实现MVCC提供了一个非阻塞读功能。MVCC的具体实现，还需要依赖于数据库记录中的三个隐式字段、undo log日志，readView。
+
+       4. 记录中的**隐藏字段**
+
+          1. | 隐藏字段    | 含义                                                         |
+             | ----------- | ------------------------------------------------------------ |
+             | DB_TRX_ID   | 最近修改事务ID，记录插入这条记录或后面一次修改该记录的事务ID。自增。 |
+             | DB_ROLL_PTR | 回滚指针，指向这条记录的上一个版本，用于配合undo log，指向上一个版本。 |
+             | DB_ROW_ID   | 隐藏主键，如果表结构没有指定主键，将会生成该隐藏字段。       |
+
+          2. `idb2sdi stu.idb`查看idb文件中的字段命令（linux命令），可以查看隐藏字段
+
+       5. undo log
+
+          1. 回滚日志，在insert、update、delete的时候产生的便于数据回滚的日志
+          2. 当insert的时候，产生的undo log日志旨在回滚时需要，在事务提交后，可被立即删除。
+          3. 而update、delete的时候，产生的undo log日志不仅在回滚时需要，在快照读时也需要，不然会立即被删除。
+
+       6. **undo log版本链** [图示](https://github.com/brant8/mypython/blob/master/pics/mysql_undologchain.png)
+
+          1. 不同事务或相同事务对同一条记录进行修改，会导致该记录的undolog生成一条记录版本链表，链表的头部示最新的旧记录，链表尾部示最早的旧纪录。
+
+       7. **readview**
+
+          1. Readview 读视图是*快照读*SQL执行时MVCC读取数据的依据，记录并维护系统当前活跃的事务（未提交的）id。
+
+          2. readview包含了四个核心字段
+
+             | 字段           | 含义                                                 |
+             | -------------- | ---------------------------------------------------- |
+             | m_ids          | 当前活跃的事务ID集合                                 |
+             | min_trx_id     | 最小活跃事务ID                                       |
+             | max_trx_id     | 预分配事务ID，当前最大事务ID+1（因为事务ID是自增的） |
+             | creator_trx_id | readview创建者的事务ID                               |
+
+          3. 版本数据链访问规则， `trx_id`代表当前事务ID
+
+             1. `trx_id == create_trx_id`：可以访问该版本。成立，说明数据是当前这个事务更改的。
+             2. `trx_id < min_trx_id`：可以访问该版本。成立，说明数据已经提交了。
+             3. `trx_id > max_trx_id`：不可以访问该版本。成立，说明该事务在ReadView生成后才开启。
+             4. `min_trx_id <= trx_id <= max_trx_id`：如果`trx_id`不在`m_ids`中是可以访问该版本的。成立，说明数据已经提交。
+
+          4. 不同隔离级别，生成ReadView的时机不同
+
+             1. read committed：在事务中每一次执行快照读时生成readview。
+             2. repeatable read：仅在食物中第一次执行快照读生成readview，后续复用该readview。
+
+          5. rc隔离级别下，在食物中每一次执行快照读时生成readview。[图示](https://github.com/brant8/mypython/blob/master/pics/mysql_readview.png)
+
+          6. rr隔离级别下，仅在事务中第一次执行快照读时生成readview，后续复用该readview。[图示](https://github.com/brant8/mypython/blob/master/pics/mysql_readview2.png)
+
+       8. *MVCC原理核心*：隐藏字段、undo log版本链、readview。
+
+       9. MVCC 加 锁 即为 **隔离性**。
+
+       10. **一致性**：redo log + undo log。
+
+25. ### 系统数据库
+
+    1. MySQL数据库安装完成后，自带四个数据库，以 mysql8.0 为例
+
+    2. | 数据库             | 含义                                                         |
+       | ------------------ | ------------------------------------------------------------ |
+       | mysql              | 存储mysql服务器正常运行所需要的各种信息（时区、主从、用户、权限等） |
+       | information_schema | 提供了访问数据库元数据的各种表和视图，包含数据库、表、字段类型以及访问权限等 |
+       | performance_schema | 为Mysql服务器运行时状态提供了一个底层监控功能，主要用于手机数据库服务器性能参数 |
+       | sys                | 包含了一系列方便DBA和开发人员利用performance_schema性能数据库进行性能调优和诊断的视图 |
+
+    3. **mysql 客户端工具**
+
+       1. ```sql
+          语法：
+          	mysql [options] [database]
+          选项：
+          	-u, --user=name		#指定用户名
+          	-p,--password[=name]#指定密码
+          	-h,--host=name		#指定服务器IP或域名
+          	-p,--port=port		#指定连接端口
+          	-e,--execute=name	#执行SQL语句并退出
+          #-e说明,需要指定数据库名，比如数据库itcast
+          mysql -h192.168.0.1 -p3306 -uroot -p1234 itcast -e "select * from stu"
+          ```
+
+    4. **mysqladmin 是执行管理操作的客户端程序**。可以用来它检查服务器的配置和当前状态、创建并删除数据库等。
+
+       1. `mysqladmin --help`
+       2. 比如：`mysqladmin -uroot -p1234 create db02`
+
+    5. mysqlbinlog 由于服务器生成的二进制日志文件以二进制格式保存，所以如果想要检查这些文本的文本格式，就会用到**mysqlbinlog日志管理工具**。
+
+       1. ```sql
+          语法：
+          	mysqlbinlog [options] log-files1 log-files2...
+          选项：
+          	-d,--database=name		#指定数据库名称，指列出指定的数据库相关操作
+          	-o,--offset=#			#忽略掉日志中的前n行命令
+          	-r,--result-file=name	#将输出的文本格式日志输出到指定文件
+          	-s,--short-form			#显示简单格式，省略掉一些信息
+          	--start-datatime=data1 --stop-datatime=date2 #指定日期间隔内的所有日志
+          	--start-position=pos1 --stop-position=pos2	 #指定位置间隔内的所有日志
+          ```
+
+       2. 二进制日志文件，如 `binlog.000011`，会定期自动清理。
+
+    6. **mysqlshow 客户端对象查找工具**，用来快速查找存在哪些数据库、数据库中的表、表中的列或者索引。
+
+       1. ```sql
+          语法：
+          	mysqlshow [options] [db_name [table_name [col_name]]]
+          选项：
+          	--count		显示数据库及表的统计信息（数据库，表 均可以不指定）
+          	-i			显示指定数据库或者指定表的状态信息
+          示例：
+          	#查询每个数据胡库的表的数量及表中记录的数量
+          	mysqlshow -uroot -p1234 --count
+          	#查询test库中每个表中的字段数，及行数
+          	mysqlshow -uroot -p1234 test --count
+          	#查询test库中book表的详细情况
+          	mysqlshow -uroot -p1234 test book --count
+          ```
+
+    7. mysqldump 客户端工具用来备份数据库或在不同数据库之间进行数据迁移。备份内容包含创建表，及插入表的SQL语句。
+
+       1. ```sql
+          语法：
+          	mysqldump [options] db_name [tables]
+          	mysqldump [options] --database/-B db1 [db2 db3]
+          	mysqldump [options] --all-databases/A
+          连接选项：
+          	-u,--user=name			#指定用户名
+          	-p,--password[=name]	#指定密码
+          	-h,--host=name			#指定服务器ip或域名
+          	-P,--port=#				#指定连接端口
+          输出选项：
+          	--add-drop-database		#在每个数据库创建语句前加上drop database语句
+          	--add-drop-table		#在每个表创建语句前加上drop table语句，默认开启；不开启（--skip-add-drop-table）
+          	-n,--no-create-db		#不包含数据库的创建语句
+          	-t,--no-create-info		#不包含数据表的创建语句
+          	-d --no-data			#不包含数据
+          	-T,--tab=name			#自动生成两个文件：一个.sql文件，创建表结构的语句；一个.txt文件，数据文件
+          示例：
+          	mysqldump -uroot -p1234 db01 > db01.sql
+          	#查看sql觉得安全的目录
+          	show variables like '%secure_file_priv%' #得出安全目录，比如/var/lib/mysql-files/
+          	mysqldump -uroot -p1234 -T /root db01 score #出错 root目录不是默认安全陌路
+          	mysqldump -uroot -p1234 -T /var/lib/mysql-files/ db01 score #生成score.sql和score.txt
+          ```
+
+    8. **mysqlimport 客户端数据导入工具**，用来导入mysqldump加 -T 参数后导出的文本文件
+
+       1. ```sql
+          语法：
+          	mysqlimport [options] db_name textfile1 [textfile2...]
+          示例：
+          	mysqlimport -uroot -p1234 test /tmp/city.txt
+          #如果需要导入sql文件，可以使用mysql中的source指令，需要登录到mysql中
+          语法：
+          	mysql> source /root/xxx.sql
+          ```
+
+    9. 
 
 
 
