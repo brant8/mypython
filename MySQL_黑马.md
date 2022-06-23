@@ -1756,8 +1756,7 @@
           	mysql> source /root/xxx.sql
           ```
 
-    9. 
-
+26. ### MySQL 进阶结束，[未进入到运维片](https://www.bilibili.com/video/BV1Kr4y1i7ru?p=152&spm_id_from=pageDriver&vd_source=31dc1543590614dbc49f7bf7cfc36195)
 
 
 
